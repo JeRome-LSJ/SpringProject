@@ -17,18 +17,18 @@
 
     <!-- 定义Spring MVC的前端控制器 -->
     <servlet>
-        <servlet-name>springmvc</servlet-name>
+        <servlet-name>spring-mvc</servlet-name>
         <servlet-class>com.jerome.mvcframework.v1.servlet.LsjDispatcherServlet</servlet-class>
         <init-param>
             <param-name>contextConfigLocation</param-name>
-            <param-value>classpath:application.properties</param-value>
+            <param-value>application.properties</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
     </servlet>
 
     <!-- 让Spring MVC的前端控制器拦截所有请求 -->
     <servlet-mapping>
-        <servlet-name>springmvc</servlet-name>
+        <servlet-name>spring-mvc</servlet-name>
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
 

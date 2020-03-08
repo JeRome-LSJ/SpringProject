@@ -157,7 +157,7 @@ public class LsjDispatcherServlet extends HttpServlet {
     }
 
     private void doScanner(String scanPackage) {
-        URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replaceAll("\\.", "\"))"));
+        URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replaceAll("\\.", "/"));
         assert url != null;
         File classDir = new File(url.getFile());
         for (File file : Objects.requireNonNull(classDir.listFiles())) {
