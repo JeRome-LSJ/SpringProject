@@ -50,7 +50,11 @@ public class LsjDispatcherServlet extends HttpServlet {
     }
 
 
-
+    /**
+     * servlet init
+     * @param config
+     * @throws ServletException
+     */
     @Override
     public void init(ServletConfig config) throws ServletException {
         InputStream is = null;
@@ -105,13 +109,14 @@ public class LsjDispatcherServlet extends HttpServlet {
                     continue;
                 }
             }
+            /** 遍历mapping中，将所有controller中的Autowire注入*/
             for (Object object : mapping.values()) {
                 if (Objects.isNull(object)) {
                     continue;
                 }
                 Class clazz = object.getClass();
                 if (clazz.isAnnotationPresent(LsjController.class)) {
-                    Field[] fields = clazz.getFields();
+                    Field[] fields = clazz.getDeclaredFields();
                     for (Field field : fields) {
                         if (!field.isAnnotationPresent(LsjAutowire.class)) {
                             continue;
