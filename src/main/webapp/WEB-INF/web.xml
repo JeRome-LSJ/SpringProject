@@ -18,7 +18,7 @@
     <!-- 定义Spring MVC的前端控制器 -->
     <servlet>
         <servlet-name>spring-mvc</servlet-name>
-        <servlet-class>com.jerome.mvcframework.v1.servlet.LsjDispatcherServlet</servlet-class>
+        <servlet-class>com.jerome.mvcframework.v2.servlet.LsjDispatcherServlet</servlet-class>
         <init-param>
             <param-name>contextConfigLocation</param-name>
             <param-value>application.properties</param-value>

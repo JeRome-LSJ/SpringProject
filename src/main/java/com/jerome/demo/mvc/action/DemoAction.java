@@ -19,7 +19,7 @@ public class DemoAction {
 
     @LsjRequestMapping(value = "/query")
     public void query(HttpServletRequest req, HttpServletResponse resp,
-                      @LsjRequestParam String name) {
+                      @LsjRequestParam("name") String name) {
         String result = demoService.get(name);
         try {
             resp.getWriter().write(result);

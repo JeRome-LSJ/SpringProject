@@ -1,9 +1,6 @@
 package com.jerome.mvcframework.v2.servlet;
 
-import com.jerome.mvcframework.annotation.LsjAutowire;
-import com.jerome.mvcframework.annotation.LsjController;
-import com.jerome.mvcframework.annotation.LsjRequestMapping;
-import com.jerome.mvcframework.annotation.LsjService;
+import com.jerome.mvcframework.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
@@ -16,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -108,7 +106,7 @@ public class LsjDispatcherServlet extends HttpServlet {
                 String beanName = autowire.value().trim();
                 if ("".equals(beanName)) {
                     System.out.println(field.getName());
-                    beanName = toLowerFirstCase(field.getType().getName());
+                    beanName = field.getType().getName();
                 }
                 //如果是public以外的类型，只要加了Autowire注解，都要强制赋值
                 //反射中叫暴力访问
@@ -135,13 +133,13 @@ public class LsjDispatcherServlet extends HttpServlet {
                 if (clazz.isAnnotationPresent(LsjController.class)) {
                     String beanName = clazz.getAnnotation(LsjController.class).value();
                     if ("".equals(beanName.trim())) {
-                        beanName = toLowerFirstCase(className);
+                        beanName = toLowerFirstCase(clazz.getSimpleName());
                     }
                     ioc.put(beanName, clazz.newInstance());
                 }else if (clazz.isAnnotationPresent(LsjService.class)) {
                     String beanName = clazz.getAnnotation(LsjService.class).value();
                     if ("".equals(beanName.trim())) {
-                        beanName = toLowerFirstCase(className);
+                        beanName = toLowerFirstCase(clazz.getSimpleName());
                     }
                     Object instance = clazz.newInstance();
                     ioc.put(beanName, instance);
@@ -209,7 +207,14 @@ public class LsjDispatcherServlet extends HttpServlet {
 
     }
 
-    private void doDispatch(HttpServletRequest req, HttpServletResponse resp)throws Exception {
+    /**
+     * 静态处理url参数
+     * @param req
+     * @param resp
+     * @throws Exception
+     */
+    @Deprecated
+    private void doDispatch_1(HttpServletRequest req, HttpServletResponse resp)throws Exception {
         String url = req.getRequestURI();
         String contextPath = req.getContextPath();
         url = url.replaceAll(contextPath, "").replaceAll("/+", "/");
@@ -218,6 +223,51 @@ public class LsjDispatcherServlet extends HttpServlet {
         }
         Method method = this.handlerMapping.get(url);
         Map<String, String[]> params = req.getParameterMap();
+        String beanName = toLowerFirstCase(method.getDeclaringClass().getSimpleName());
+        method.invoke(ioc.get(beanName), new Object[]{req, resp, params.get("name")[0]});
+    }
+
+    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        String url = req.getRequestURI();
+        String contextPath = req.getContextPath();
+        url = url.replaceAll(contextPath, "").replaceAll("/+", "/");
+        if (!this.handlerMapping.containsKey(url)) {
+            resp.getWriter().write("404 Not Found!!");
+        }
+        Method method = this.handlerMapping.get(url);
+        // 第一个参数，方法所在实例
+        // 第二个参数，调用时所需要的实参
+        Map<String, String[]> params = req.getParameterMap();
+        // 获取方法的形参列表
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        // 保存请求的url参数列表
+        Map<String, String[]> parameterMap = req.getParameterMap();
+        // 保存赋值参数的位置
+        Object[] paramValues = new Object[parameterTypes.length];
+        for (int i = 0; i < parameterTypes.length; i++) {
+            Class parameterType = parameterTypes[i];
+            if (parameterType == HttpServletRequest.class) {
+                paramValues[i] = req;
+            } else if (parameterType == HttpServletResponse.class) {
+                paramValues[i] = resp;
+            } else if (parameterType == String.class) {
+                // 提取方法中加了注解的参数
+                Annotation[][] pa = method.getParameterAnnotations();
+                for (int j = 0; j < pa.length; j++) {
+                    for (Annotation a : pa[j]) {
+                        if (a instanceof LsjRequestParam) {
+                            String paramName = ((LsjRequestParam) a).value();
+                            if (!"".equals(paramName.trim())) {
+                                String value = Arrays.toString(parameterMap.get(paramName))
+                                        .replaceAll("\\[|\\]", "")
+                                        .replaceAll("\\s", ",");
+                                paramValues[i] = value;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         String beanName = toLowerFirstCase(method.getDeclaringClass().getSimpleName());
         method.invoke(ioc.get(beanName), new Object[]{req, resp, params.get("name")[0]});
     }
